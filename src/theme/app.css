@@ -1,0 +1,9 @@
+@import 'tailwindcss/base';
+
+@import 'tailwindcss/components';
+@import './scaffolding/typography.css';
+@import './scaffolding/container.css';
+
+@import './components/hero.css';
+
+@import 'tailwindcss/utilities';

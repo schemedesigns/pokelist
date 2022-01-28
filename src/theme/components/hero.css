@@ -1,0 +1,10 @@
+.hero {
+  @apply py-10;
+  background: rgb(255,147,35);
+  background: radial-gradient(circle, rgba(255,147,35,1) 0%, rgba(248,105,57,1) 100%);
+}
+
+.hero__img {
+  @apply absolute w-1/2 max-w-xs right-0;
+  bottom: -7rem;
+}
