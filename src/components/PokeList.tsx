@@ -10,8 +10,15 @@ interface ApiResponse {
     url: string;
 }
 
-async function getNext(offset: number = 0) {
-    const { results } = await fetchPokemon<{ results: ApiResponse[]; next: string }>(`https://pokeapi.co/api/v2/pokemon?limit=15&offset=${offset}`);
+interface GetNextArgs {
+    offset?: number;
+    limit?: number;
+}
+
+async function getNext({ limit = 15, offset = 0 }: GetNextArgs) {
+    const { results } = await fetchPokemon<{ results: ApiResponse[]; next: string }>(
+        `https://pokeapi.co/api/v2/pokemon?limit=${limit}&offset=${offset}`
+    );
 
     const data = results.map<Pokemon>((item) => {
         const { name, url } = item;
@@ -30,23 +37,27 @@ async function getNext(offset: number = 0) {
     return data;
 }
 
-export default function PokeList() {
+interface Props {
+    limit?: number;
+}
+
+export default function PokeList({ limit = 15 }: Props) {
     const [pokemon, setPokemon] = useState<Pokemon[]>([]);
     const [nextPokemon, setNextPokemon] = useState<Pokemon[]>([]);
     const [currentOffset, setCurrentOffset] = useState<number>(0);
     const lastCard = useRef<HTMLDivElement>(null);
 
     const primeNextBatch = useCallback(async () => {
-        const offset = currentOffset + 15;
-        const data = await getNext(offset);
+        const offset = currentOffset + limit;
+        const data = await getNext({ limit, offset });
 
         setCurrentOffset(offset);
         setNextPokemon(data);
-    }, [currentOffset]);
+    }, [currentOffset, limit]);
 
     useEffect(() => {
         const init = async () => {
-            const data = await getNext();
+            const data = await getNext({ limit });
             setPokemon(data);
             primeNextBatch();
         };
