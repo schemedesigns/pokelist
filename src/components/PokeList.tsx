@@ -10,8 +10,8 @@ interface ApiResponse {
     url: string;
 }
 
-async function getNext(offset: number = 0) {
-    const { results } = await fetchPokemon<{ results: ApiResponse[]; next: string }>(`https://pokeapi.co/api/v2/pokemon?limit=15&offset=${offset}`);
+async function getNext(url: string) {
+    const { results, next: nextUrl } = await fetchPokemon<{ results: ApiResponse[]; next: string }>(url);
 
     const data = results.map<Pokemon>((item) => {
         const { name, url } = item;
@@ -27,42 +27,48 @@ async function getNext(offset: number = 0) {
         };
     });
 
-    return data;
+    return { data, nextUrl };
 }
 
-export default function PokeList() {
+interface Props {
+    limit?: number;
+}
+
+export default function PokeList({ limit = 15 }: Props) {
     const [pokemon, setPokemon] = useState<Pokemon[]>([]);
     const [nextPokemon, setNextPokemon] = useState<Pokemon[]>([]);
-    const [currentOffset, setCurrentOffset] = useState<number>(0);
+    const [nextOffsetUrl, setNextOffsetUrl] = useState<string>(`https://pokeapi.co/api/v2/pokemon?limit=${limit}&offset=0`);
     const lastCard = useRef<HTMLDivElement>(null);
 
     const primeNextBatch = useCallback(async () => {
-        const offset = currentOffset + 15;
-        const data = await getNext(offset);
-
-        setCurrentOffset(offset);
+        const { data, nextUrl } = await getNext(nextOffsetUrl);
         setNextPokemon(data);
-    }, [currentOffset]);
+        setNextOffsetUrl(nextUrl);
+    }, [nextOffsetUrl]);
 
     useEffect(() => {
         const init = async () => {
-            const data = await getNext();
+            const { data, nextUrl } = await getNext(nextOffsetUrl);
+            setNextOffsetUrl(nextUrl);
             setPokemon(data);
-            primeNextBatch();
         };
 
         init();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    useEffect(() => {
+        primeNextBatch();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pokemon]);
+
     const loadmore = useCallback(
         (entries) => {
             if (entries[0].isIntersecting) {
                 setPokemon([...pokemon, ...nextPokemon]);
-                primeNextBatch();
             }
         },
-        [nextPokemon, pokemon, primeNextBatch]
+        [nextPokemon, pokemon]
     );
 
     useEffect(() => {
